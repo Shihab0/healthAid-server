@@ -3,14 +3,13 @@ const app = express();
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 app.use(cors());
 app.use(express.json());
 
 //Mongodb
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.ueibnfi.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
 
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -43,7 +42,6 @@ app.get("/services", async (req, res) => {
 
 app.get("/allservices", async (req, res) => {
   try {
-    console.log(req.body);
     const query = {};
     const cursor = serviceCollection.find(query);
     const allServices = await cursor.toArray();
@@ -58,8 +56,8 @@ app.post("/addServices", async (req, res) => {
   try {
     const service = req.body;
     const result = await serviceCollection.insertOne(service);
-    console.log(result);
-    if (acknowledged) {
+    // console.log(result);
+    if (result.acknowledged) {
       res.send({
         success: true,
         message: `${service.service_name} Successfully added`,
@@ -68,12 +66,28 @@ app.post("/addServices", async (req, res) => {
     } else {
       res.send({
         success: false,
-        error: error.message,
+        error: "Service not added",
       });
     }
-  } catch {
-    (err) => console.log(err);
+  } catch (error) {
+    console.log("line:74", error);
+    res.send({
+      success: false,
+      error: error.message,
+    });
   }
+});
+
+app.get("/details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    console.log(id);
+    const query = { _id: ObjectId(id) };
+    const service = await serviceCollection.findOne(query);
+    res.send({
+      data: service,
+    });
+  } catch {}
 });
 
 //Test
