@@ -37,7 +37,42 @@ app.get("/services", async (req, res) => {
     const services = await cursor.toArray();
     res.send(services);
   } catch {
-    console.error();
+    console.log(error);
+  }
+});
+
+app.get("/allservices", async (req, res) => {
+  try {
+    console.log(req.body);
+    const query = {};
+    const cursor = serviceCollection.find(query);
+    const allServices = await cursor.toArray();
+    res.send(allServices);
+    // console.log(allServices);
+  } catch {
+    console.log(error);
+  }
+});
+
+app.post("/addServices", async (req, res) => {
+  try {
+    const service = req.body;
+    const result = await serviceCollection.insertOne(service);
+    console.log(result);
+    if (acknowledged) {
+      res.send({
+        success: true,
+        message: `${service.service_name} Successfully added`,
+        data: result,
+      });
+    } else {
+      res.send({
+        success: false,
+        error: error.message,
+      });
+    }
+  } catch {
+    (err) => console.log(err);
   }
 });
 
