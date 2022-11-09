@@ -27,12 +27,13 @@ async function dbConnect() {
 dbConnect().catch((err) => console.log(err));
 
 const serviceCollection = client.db("healthAid").collection("services");
+const reviewCollection = client.db("healthAid").collection("reviews");
 
 //CURD OPERATION
 app.get("/services", async (req, res) => {
   try {
     const query = {};
-    const cursor = serviceCollection.find(query).limit(3);
+    const cursor = serviceCollection.find(query).limit(3).sort({ _id: -1 });
     const services = await cursor.toArray();
     res.send(services);
   } catch {
@@ -43,7 +44,7 @@ app.get("/services", async (req, res) => {
 app.get("/allservices", async (req, res) => {
   try {
     const query = {};
-    const cursor = serviceCollection.find(query);
+    const cursor = serviceCollection.find(query).sort({ _id: -1 });
     const allServices = await cursor.toArray();
     res.send(allServices);
     // console.log(allServices);
@@ -78,10 +79,79 @@ app.post("/addServices", async (req, res) => {
   }
 });
 
+app.post("/addReview", async (req, res) => {
+  try {
+    const review = req.body;
+    const result = await reviewCollection.insertOne(review);
+    if (result.acknowledged) {
+      res.send({
+        success: true,
+        message: `${review.name} added review successfully`,
+        data: result,
+      });
+    } else {
+      res.send({
+        success: false,
+        error: "Review Failed",
+      });
+    }
+  } catch {}
+});
+
+app.get("/review/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    // console.log(id);
+    const query = { productId: id };
+    const cursor = reviewCollection.find(query).sort({ _id: -1 });
+    const review = await cursor.toArray();
+    res.send(review);
+  } catch {}
+});
+
+/////////// Edit & update ////////////////
+
+app.get("/edit/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    // console.log(id);
+    const query = { _id: ObjectId(id) };
+    const cursor = serviceCollection.find(query).sort({ _id: -1 });
+    const specificService = await cursor.toArray();
+    res.send(specificService);
+  } catch {}
+});
+
+app.put("/edit/:id", async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: ObjectId(id) };
+  const editedService = req.body;
+  const option = { upsert: true };
+  const updatedService = {
+    $set: {
+      service_name: editedService.service_name,
+      service_type: editedService.service_type,
+      service_fee: editedService.service_fee,
+      image: editedService.image,
+      description: editedService.description,
+    },
+  };
+  const result = await serviceCollection.updateOne(
+    filter,
+    updatedService,
+    option
+  );
+  res.send(result);
+});
+
+//////////////////////////////////
+
+/////////////get details//////////////
+
 app.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
+    // console.log(id);
     const query = { _id: ObjectId(id) };
     const service = await serviceCollection.findOne(query);
     res.send({
@@ -89,6 +159,26 @@ app.get("/details/:id", async (req, res) => {
     });
   } catch {}
 });
+
+///////////////////////////////////////////////
+
+///////////// Delete /////////////////////
+
+app.delete("/delete/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    console.log(id);
+    // console.log(id);
+    const query = { _id: ObjectId(id) };
+    const service = await serviceCollection.deleteOne(query);
+    console.log(service);
+    res.send({
+      data: service,
+    });
+  } catch {}
+});
+
+////////////////////////////////////////////////
 
 //Test
 app.get("/test", (req, res) => {
