@@ -4,6 +4,7 @@ const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { query } = require("express");
 
 app.use(cors());
 app.use(express.json());
@@ -122,6 +123,39 @@ app.get("/edit/:id", async (req, res) => {
   } catch {}
 });
 
+////////edit & update review
+app.get("/editReview/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    // console.log(id);
+    const query = { _id: ObjectId(id) };
+    const cursor = reviewCollection.findOne(query);
+    const specificReview = await cursor;
+    res.send(specificReview);
+  } catch {}
+});
+
+app.put("/myReview/:id", async (req, res) => {
+  const id = req.params.id;
+  // console.log(id);
+  const filter = { _id: ObjectId(id) };
+  const editedReview = req.body;
+  const option = { upsert: true };
+  const updatedReview = {
+    $set: {
+      comment: editedReview.comment,
+    },
+  };
+  const result = await reviewCollection.updateOne(
+    filter,
+    updatedReview,
+    option
+  );
+  res.send(result);
+});
+
+////////////////////////////
+
 app.put("/edit/:id", async (req, res) => {
   const id = req.params.id;
   const filter = { _id: ObjectId(id) };
@@ -146,6 +180,19 @@ app.put("/edit/:id", async (req, res) => {
 
 //////////////////////////////////
 
+/////////////get my review ///////////////
+app.get("/review", async (req, res) => {
+  let query = {};
+  if (req.query.email) {
+    query = {
+      email: req.query.email,
+    };
+  }
+  const cursor = reviewCollection.find(query).sort({ _id: -1 });
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
 /////////////get details//////////////
 
 app.get("/details/:id", async (req, res) => {
@@ -162,12 +209,12 @@ app.get("/details/:id", async (req, res) => {
 
 ///////////////////////////////////////////////
 
-///////////// Delete /////////////////////
+///////////// Delete service/////////////////////
 
 app.delete("/delete/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
+    // console.log(id);
     // console.log(id);
     const query = { _id: ObjectId(id) };
     const service = await serviceCollection.deleteOne(query);
@@ -178,10 +225,26 @@ app.delete("/delete/:id", async (req, res) => {
   } catch {}
 });
 
+///////////// Delete review/////////////////////
+
+app.delete("/deleteReview/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    console.log(id);
+    // console.log(id);
+    const query = { _id: ObjectId(id) };
+    const service = await reviewCollection.deleteOne(query);
+    console.log(service);
+    res.send({
+      data: service,
+    });
+  } catch {}
+});
+
 ////////////////////////////////////////////////
 
 //Test
-app.get("/test", (req, res) => {
+app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
